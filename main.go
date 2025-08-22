@@ -3,12 +3,9 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"os/signal"
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"unsafe"
 )
 
@@ -17,7 +14,8 @@ func main() {
 	// flag.Parse()
 	// size := 4
 	// dp := make(map[string]int, factorial(size*size))
-	n := randomNewNode(4)
+remake:
+	n := randomNewNode(3)
 	// n := node{
 	// 	state: [][]int{
 	// 		// 		{7, 3, 1}, {0, 2, 8}, {6, 5, 4},
@@ -34,6 +32,40 @@ func main() {
 	// }
 	// n2 := n
 	fmt.Println(n)
+	inversions := 0
+	zeroIndex := 0
+	for i, row := range n.state {
+		for j, num := range row {
+			for l := j; l < len(n.state); l++ {
+				num2 := n.state[i][l]
+				if num > num2 {
+					inversions++
+				}
+			}
+			for k := i + 1; k < len(n.state); k++ {
+				for l := 0; l < len(n.state); l++ {
+					num2 := n.state[k][l]
+					if num > num2 {
+						inversions++
+					}
+				}
+			}
+			if num == 0 {
+				zeroIndex = len(n.state) - i
+			}
+		}
+	}
+	fmt.Println(len(n.state)-zeroIndex, zeroIndex, inversions)
+	switch len(n.state) % 2 {
+	case 0:
+		if (inversions+zeroIndex)%2 != 0 {
+			goto remake
+		}
+	case 1:
+		if inversions%2 != 0 {
+			goto remake
+		}
+	}
 	end := "1"
 	for i := 2; i < len(n.state)*len(n.state); i++ {
 		end = fmt.Sprintf("%s %s", end, strconv.Itoa(i))
@@ -179,22 +211,11 @@ func solveIter(start node) queueNode {
 	minMattanFound := 0
 	minState := make([][]int, 0)
 	visited := make(map[string]bool)
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
 	// Create a channel to signal program termination
 
 	// Goroutine to handle the signal
 	var cur queueNode
-	go func() {
-		sig := <-c
-		fmt.Printf("\nReceived signal: %s\n", sig)
-		// Perform cleanup or other actions here
-		fmt.Println("Cleaning up resources...")
-		fmt.Println(cur.n.state)
-		fmt.Println(minMattanFound)
-		os.Exit(1)
-	}()
 	for len(queue) > 0 {
 		// cur := queue[0]
 		cur = queue.pop()
@@ -207,6 +228,7 @@ func solveIter(start node) queueNode {
 		// queue = queue[1:]
 		// mc := cur.n.manhattan(solvedNode)
 		if cur.n.String() == solvedString {
+
 			// fmt.Println(cur.n.manhattan(solvedNode))
 			return cur
 		}
@@ -274,6 +296,7 @@ func IDAstar(root node) []node {
 		}
 		bound = cost
 		fmt.Println("searched")
+		fmt.Println(path)
 	}
 }
 
