@@ -39,7 +39,8 @@ func main() {
 		end = fmt.Sprintf("%s %s", end, strconv.Itoa(i))
 	}
 	// fmt.Println(end)
-	fmt.Println(solveIter(n).path)
+	// fmt.Println(solveIter(n).path)
+	fmt.Println(IDAstar(n))
 	// fmt.Println(solve(n, []string{start}, m, start, end, 0))
 	// fmt.Println(n2)
 }
@@ -159,40 +160,6 @@ type queueNode struct {
 }
 
 func solveIter(start node) queueNode {
-	// inversions := 0
-	// zeroIndex := 0
-	// for i, row := range start.state {
-	// 	for j, num := range row {
-	// 		for l := j; l < len(start.state); l++ {
-	// 			num2 := start.state[i][l]
-	// 			if num > num2 {
-	// 				inversions++
-	// 			}
-	// 		}
-	// 		for k := i + 1; k < len(start.state); k++ {
-	// 			for l := 0; l < len(start.state); l++ {
-	// 				num2 := start.state[k][l]
-	// 				if num > num2 {
-	// 					inversions++
-	// 				}
-	// 			}
-	// 		}
-	// 		if num == 0 {
-	// 			zeroIndex = len(start.state) - i
-	// 		}
-	// 	}
-	// }
-	// fmt.Println(len(start.state)-zeroIndex, zeroIndex, inversions)
-	// switch len(start.state) % 2 {
-	// case 0:
-	// 	if (inversions+zeroIndex)%2 != 0 {
-	// 		return queueNode{}
-	// 	}
-	// case 1:
-	// 	if inversions%2 != 0 {
-	// 		return queueNode{}
-	// 	}
-	// }
 	startStr := start.String()
 	solvedState := make([][]int, len(start.state))
 	index := 1
@@ -281,6 +248,73 @@ func solveIter(start node) queueNode {
 	return queueNode{}
 }
 
+// IDAstar initializes and orchestrates the iterative deepening A* search.
+// It returns the path from the root to the goal node, if one is found.
+func IDAstar(root node) []node {
+	// TODO: Implementa
+	solvedState := make([][]int, len(root.state))
+	path := []node{root}
+	index := 1
+	for i := range solvedState {
+		solvedState[i] = make([]int, len(root.state))
+		for j := range solvedState[i] {
+			solvedState[i][j] = index
+			index++
+		}
+	}
+	solvedState[len(solvedState)-1][len(solvedState)-1] = 0
+	goal := node{solvedState}
+	bound := root.manhattan(goal)
+	for {
+		t, cost := search(&path, 0, bound, goal)
+		if t != nil {
+			return t
+		}
+		if cost == -1 {
+			return nil
+		}
+		bound = cost
+		fmt.Println("searched")
+	}
+}
+
+// search is a recursive function that performs a depth-limited search.
+// It explores paths from the current node, pruning branches that exceed the given cost bound.
+// It returns the path to the goal if found, and the minimum cost of a path that exceeded the bound.
+func search(path *[]node, g, bound int, goal node) ([]node, int) {
+	// TODO: Implementation
+	n := (*path)[len((*path))-1]
+	f := g + n.manhattan(goal)
+	if f > bound {
+		return nil, f
+	}
+	if n.isGoal(goal) {
+		return (*path), bound
+	}
+	min := -1
+	var t []node = nil
+	for _, succ := range n.determineNeighbors() {
+		if slices.ContainsFunc((*path), func(n node) bool { return n.String() == succ.String() }) {
+			continue
+		}
+		(*path) = append((*path), succ)
+		t, cost := search(path, g+n.manhattan(succ), bound, goal)
+		if t != nil {
+			return t, cost
+		}
+		if cost < min || min == -1 {
+			min = cost
+		}
+		*path = (*path)[:len(*path)-1]
+	}
+	return t, min
+}
+
+// isGoal checks if the current node's state matches the goal state.
+func (n node) isGoal(goal node) bool {
+	return n.String() == goal.String()
+}
+
 type priorityQueue []queueNode
 
 func (pq *priorityQueue) insert(node queueNode) {
@@ -305,7 +339,6 @@ func (pq *priorityQueue) pop() queueNode {
 }
 
 func (pq *priorityQueue) bubbleDown() {
-	fmt.Println("bubblingdown")
 	if len((*pq)) == 1 {
 		return
 	}
