@@ -251,7 +251,6 @@ func solveIter(start node) queueNode {
 // IDAstar initializes and orchestrates the iterative deepening A* search.
 // It returns the path from the root to the goal node, if one is found.
 func IDAstar(root node) []node {
-	// TODO: Implementa
 	solvedState := make([][]int, len(root.state))
 	path := []node{root}
 	index := 1
@@ -282,7 +281,6 @@ func IDAstar(root node) []node {
 // It explores paths from the current node, pruning branches that exceed the given cost bound.
 // It returns the path to the goal if found, and the minimum cost of a path that exceeded the bound.
 func search(path *[]node, g, bound int, goal node) ([]node, int) {
-	// TODO: Implementation
 	n := (*path)[len((*path))-1]
 	f := g + n.manhattan(goal)
 	if f > bound {
