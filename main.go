@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/geofpwhite/numberPuzzleSolver/graph"
+	"github.com/geofpwhite/numberPuzzleSolver/pairwise"
 )
 
 func main() {
@@ -29,7 +30,7 @@ remake:
 	// 	},
 	// }
 	// n2 := n
-	fmt.Println(n)
+	// fmt.Println(n)
 	inversions := 0
 	zeroIndex := 0
 	for i, row := range n.State {
@@ -70,7 +71,11 @@ remake:
 	}
 	// fmt.Println(end)
 	// fmt.Println(solveIter(n).path)
-	fmt.Println(graph.IDAstar(n))
+	// fmt.Println(graph.IDAstar(n))
+	x := pairwise.IDAstar(n)
+	fmt.Println(x, len(x))
+	// x := pairwise.SolveIter(n)
+	// fmt.Println(x, len(x.Path))
 	// fmt.Println(solve(n, []string{start}, m, start, end, 0))
 	// fmt.Println(n2)
 }

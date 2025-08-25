@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-func factorial(num int) int {
+func Factorial(num int) int {
 	ret := 1
 	for i := 2; i <= num; i++ {
 		ret *= i
@@ -114,7 +114,7 @@ func RandomNewNode(size int) Node {
 	return n
 }
 
-func (n Node) Manhattan(other Node) int {
+func (n Node) ManhattanSum(other Node) int {
 	sum := 0
 	for i, row := range other.State {
 		for j, num := range row {
@@ -132,14 +132,25 @@ func (n Node) Manhattan(other Node) int {
 	return sum
 }
 
-type queueNode struct {
-	n         Node
-	path      []string
-	steps     int
-	manhatlen int
+type QueueNode struct {
+	N         Node
+	Path      []string
+	Steps     int
+	Manhatlen int
 }
 
-func SolveIter(start Node) queueNode {
+func (n Node) Equals(other Node) bool {
+	for i, row := range n.State {
+		for j, num := range row {
+			if num != other.State[i][j] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func SolveIter(start Node) QueueNode {
 	startStr := start.String()
 	solvedState := make([][]int, len(start.State))
 	index := 1
@@ -153,9 +164,9 @@ func SolveIter(start Node) queueNode {
 	solvedState[len(solvedState)-1][len(solvedState)-1] = 0
 	solvedString := Node{solvedState}.String()
 	solvedNode := Node{State: solvedState}
-	startNode := queueNode{start, []string{}, 0, start.Manhattan(solvedNode)}
-	queue := priorityQueue{startNode}
-	paths := make(map[string]int, factorial(len(start.State)*len(start.State)))
+	startNode := QueueNode{start, []string{}, 0, start.ManhattanSum(solvedNode)}
+	queue := PriorityQueue{startNode}
+	paths := make(map[string]int, Factorial(len(start.State)*len(start.State)))
 	minMattanFound := 0
 	minState := make([][]int, 0)
 	visited := make(map[string]bool)
@@ -163,27 +174,27 @@ func SolveIter(start Node) queueNode {
 	// Create a channel to signal program termination
 
 	// Goroutine to handle the signal
-	var cur queueNode
+	var cur QueueNode
 	for len(queue) > 0 {
 		// cur := queue[0]
-		cur = queue.pop()
-		if visited[cur.n.String()] {
+		cur = queue.Pop()
+		if visited[cur.N.String()] {
 			continue
 		}
-		visited[cur.n.String()] = true
+		visited[cur.N.String()] = true
 		// fmt.Println(cur.n.String())
 		// fmt.Println(len(queue), minMattanFound, cur.manhatlen)
 		// queue = queue[1:]
 		// mc := cur.n.Manhattan(solvedNode)
-		if cur.n.String() == solvedString {
+		if cur.N.String() == solvedString {
 
 			// fmt.Println(cur.n.Manhattan(solvedNode))
 			return cur
 		}
 		// queue = queue[1:]
-		neighbors := cur.n.DetermineNeighbors()
+		neighbors := cur.N.DetermineNeighbors()
 		slices.SortFunc(neighbors, func(a, b Node) int {
-			ma, mb := a.Manhattan(solvedNode), b.Manhattan(solvedNode)
+			ma, mb := a.ManhattanSum(solvedNode), b.ManhattanSum(solvedNode)
 			switch {
 			case ma > mb:
 				return 1
@@ -195,27 +206,27 @@ func SolveIter(start Node) queueNode {
 		})
 		for _, neighbor := range neighbors {
 			stateStr := neighbor.String()
-			newPath := append([]string{}, cur.path...)
-			if (paths[stateStr] == 0 || cur.steps+1 < paths[stateStr]) && stateStr != startStr {
-				paths[stateStr] = cur.steps + 1
+			newPath := append([]string{}, cur.Path...)
+			if (paths[stateStr] == 0 || cur.Steps+1 < paths[stateStr]) && stateStr != startStr {
+				paths[stateStr] = cur.Steps + 1
 				newPath = append(newPath, stateStr)
-				newNode := queueNode{n: neighbor, path: newPath, steps: cur.steps + 1, manhatlen: neighbor.Manhattan(solvedNode)}
+				newNode := QueueNode{N: neighbor, Path: newPath, Steps: cur.Steps + 1, Manhatlen: neighbor.ManhattanSum(solvedNode)}
 				// fmt.Println("neighbor", newNode.manhatlen)
-				if newNode.manhatlen == 0 {
-					fmt.Println(newNode.manhatlen)
+				if newNode.Manhatlen == 0 {
+					fmt.Println(newNode.Manhatlen)
 				}
-				if newNode.manhatlen < minMattanFound || minMattanFound == 0 {
-					minMattanFound = newNode.manhatlen
-					minState = newNode.n.State
+				if newNode.Manhatlen < minMattanFound || minMattanFound == 0 {
+					minMattanFound = newNode.Manhatlen
+					minState = newNode.N.State
 				}
 				// queue = append(queue, newNode)
-				queue.insert(newNode)
+				queue.Insert(newNode)
 				// fmt.Println(len(queue))
 			}
 		}
 	}
 	fmt.Println(minMattanFound, minState)
-	return queueNode{}
+	return QueueNode{}
 }
 
 // IDAstar initializes and orchestrates the iterative deepening A* search.
@@ -233,7 +244,7 @@ func IDAstar(root Node) []Node {
 	}
 	solvedState[len(solvedState)-1][len(solvedState)-1] = 0
 	goal := Node{solvedState}
-	bound := root.Manhattan(goal)
+	bound := root.ManhattanSum(goal)
 	for {
 		t, cost := search(&path, 0, bound, goal)
 		if t != nil {
@@ -248,16 +259,16 @@ func IDAstar(root Node) []Node {
 	}
 }
 
-// search is a recursive function that performs a depth-limited search.
+// Search is a recursive function that performs a depth-limited Search.
 // It explores paths from the current node, pruning branches that exceed the given cost bound.
 // It returns the path to the goal if found, and the minimum cost of a path that exceeded the bound.
 func search(path *[]Node, g, bound int, goal Node) ([]Node, int) {
 	n := (*path)[len((*path))-1]
-	f := g + n.Manhattan(goal)
+	f := g + n.ManhattanSum(goal)
 	if f > bound {
 		return nil, f
 	}
-	if n.isGoal(goal) {
+	if n.IsGoal(goal) {
 		return (*path), bound
 	}
 	min := -1
@@ -267,7 +278,7 @@ func search(path *[]Node, g, bound int, goal Node) ([]Node, int) {
 			continue
 		}
 		(*path) = append((*path), succ)
-		t, cost := search(path, g+n.Manhattan(succ)+1, bound, goal)
+		t, cost := search(path, g+n.ManhattanSum(succ)+1, bound, goal)
 		if t != nil {
 			return t, cost
 		}
@@ -279,19 +290,19 @@ func search(path *[]Node, g, bound int, goal Node) ([]Node, int) {
 	return t, min
 }
 
-// isGoal checks if the current node's state matches the goal state.
-func (n Node) isGoal(goal Node) bool {
+// IsGoal checks if the current node's state matches the goal state.
+func (n Node) IsGoal(goal Node) bool {
 	return n.String() == goal.String()
 }
 
-type priorityQueue []queueNode
+type PriorityQueue []QueueNode
 
-func (pq *priorityQueue) insert(node queueNode) {
+func (pq *PriorityQueue) Insert(node QueueNode) {
 	(*pq) = append((*pq), node)
 	nodeIndex := len((*pq)) - 1
 	for nodeIndex > 0 {
 		parentIndex := nodeIndex / 2
-		if node.manhatlen > (*pq)[parentIndex].manhatlen {
+		if node.Manhatlen > (*pq)[parentIndex].Manhatlen {
 			break
 		}
 		(*pq)[parentIndex], (*pq)[nodeIndex] = (*pq)[nodeIndex], (*pq)[parentIndex]
@@ -299,22 +310,22 @@ func (pq *priorityQueue) insert(node queueNode) {
 	}
 }
 
-func (pq *priorityQueue) pop() queueNode {
+func (pq *PriorityQueue) Pop() QueueNode {
 	ret := (*pq)[0]
 	(*pq)[0] = (*pq)[len((*pq))-1]
-	(*pq).bubbleDown()
+	(*pq).BubbleDown()
 	*pq = (*pq)[:len(*pq)-1]
 	return ret
 }
 
-func (pq *priorityQueue) bubbleDown() {
+func (pq *PriorityQueue) BubbleDown() {
 	if len((*pq)) == 1 {
 		return
 	}
 	if len((*pq)) == 2 {
 		cur := (*pq)[0]
 		child := (*pq)[1]
-		mc, mch := cur.manhatlen, child.manhatlen
+		mc, mch := cur.Manhatlen, child.Manhatlen
 		if mc > mch {
 			(*pq)[0], (*pq)[1] = (*pq)[1], (*pq)[0]
 		}
@@ -324,7 +335,7 @@ func (pq *priorityQueue) bubbleDown() {
 	cur := (*pq)[curIndex]
 	for curIndex*2+2 < len((*pq)) {
 		child1, child2 := (*pq)[(curIndex*2)+1], (*pq)[(curIndex*2)+2]
-		mc, mc1, mc2 := cur.manhatlen, child1.manhatlen, child2.manhatlen
+		mc, mc1, mc2 := cur.Manhatlen, child1.Manhatlen, child2.Manhatlen
 		if mc < mc1 && mc < mc2 {
 			return
 		}
